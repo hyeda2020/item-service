@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
 
@@ -64,7 +65,7 @@ public class BasicItemController {
     /***
      * @ModelAttribute을 사용할 경우 model.addAttribute를 자동으로 해주기 때문에 생략 가능
      */
-    @PostMapping("/add")
+    //@PostMapping("/add")
     public String addItemV2(@ModelAttribute("item") Item item) {
         itemRepository.save(item);
         // model.addAttribute("item", item);
@@ -91,6 +92,31 @@ public class BasicItemController {
     public String addItemV4(Item item) {
         itemRepository.save(item);
         return "basic/item";
+    }
+
+    /***
+     * 상품을 등록하고 웹 브라우저에서 새로고침을 누르게 되면
+     * POST /add + 상품데이터를 서버에 계속 전달하게 되는 문제가 발생
+     * 따라서, POST /add 이후에는 뷰 템플릿으로 이동하지 않고 상품 상세 화면으로 리다이렉트
+     * (Post, Redirect, Get 방식 사용)
+     */
+    //@PostMapping("/add")
+    public String addItemV5(@ModelAttribute("item") Item item) {
+        itemRepository.save(item);
+        return "redirect:/basic/items/" + item.getId(); // 단, 이렇게 URL에 변수를 사용하면 URL 인코딩 이슈가 발생할 수 있음
+    }
+
+    /***
+     * @param item
+     * @param redirectAttributes -> URL 인코딩 및 쿼리 파라미터 추가 가능
+     * @return
+     */
+    @PostMapping("/add")
+    public String addItemV6(@ModelAttribute("item") Item item, RedirectAttributes redirectAttributes) {
+        Item savedItem = itemRepository.save(item);
+        redirectAttributes.addAttribute("itemId", savedItem.getId());
+        redirectAttributes.addAttribute("status", true); // status 쿼리 파라미터로 저장이 정상적으로 되었는지 확인 가능
+        return "redirect:/basic/items/{itemId}"; // URL에 변수를 사용하지 않아도 되므로 URL 인코딩 이슈 해결
     }
 
     @GetMapping("/{itemId}/edit")
